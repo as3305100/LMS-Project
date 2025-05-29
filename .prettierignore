@@ -1,0 +1,7 @@
+/.vscode
+/node_modules
+.gitignore
+.env
+.env.sample
+package-lock.json
+package.json
