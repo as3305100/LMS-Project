@@ -1,0 +1,27 @@
+{
+  "name": "lms-project",
+  "version": "1.0.0",
+  "description": "This project contains multiple challenges",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "lms",
+    "payment gateway",
+    "express",
+    "mongoDB"
+  ],
+  "author": "Anurag Sahu",
+  "license": "ISC",
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mongoose": "^8.15.1",
+    "multer": "^2.0.0"
+  }
+}
