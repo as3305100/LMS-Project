@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema(
   {
@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
       required: [true, "Name is required"],
       trim: true,
       maxLength: [50, "Name cannot exceed 50 characters"],
-      minLength: [3, "Name length must be greater than 2 characters"]
+      minLength: [3, "Name length must be greater than 2 characters"],
     },
     email: {
       type: String,
@@ -44,10 +44,15 @@ const userSchema = new mongoose.Schema(
     },
     avatarId: {
       type: String,
+      select: false,
     },
     bio: {
       type: String,
       maxLength: [200, "Bio cannot exceed 200 characters"],
+    },
+    refreshToken: {
+      type: String,
+      select : false
     },
     enrolledCourses: [
       {
@@ -86,7 +91,7 @@ userSchema.index({ email: 1 }, { unique: true }); // ask chatgpt  // point 1
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 12);
-   next();
+  next();
 });
 
 userSchema.methods.comparePassword = async function (password) {
@@ -109,31 +114,30 @@ userSchema.methods.updateLastActive = function () {
 };
 
 userSchema.methods.getAccessToken = function () {
-   return jwt.sign(
-     {
-       _id: this._id
-     },
-     process.env.ACCESS_TOKEN_SECRET,
-     {expiresIn: process.env.ACCESS_TOKEN_EXPIRE}
-   )
-}
+  return jwt.sign(
+    {
+      _id: this._id,
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRE }
+  );
+};
 
 userSchema.methods.getRefreshToken = function () {
-   return jwt.sign(
-     {
-       _id: this._id
-     },
-     process.env.REFRESH_TOKEN_SECRET,
-     {expiresIn: process.env.REFRESH_TOKEN_EXPIRE}
-   )
-}
+  return jwt.sign(
+    {
+      _id: this._id,
+    },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: process.env.REFRESH_TOKEN_EXPIRE }
+  );
+};
 
 userSchema.virtual("totalEnrolledCourses").get(function () {
   return this.enrolledCourses?.length || 0;
 });
 
-export const User = mongoose.model("User", userSchema)
-
+export const User = mongoose.model("User", userSchema);
 
 // point 1
 /* 
