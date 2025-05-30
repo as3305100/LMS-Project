@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken"
 
 const userSchema = new mongoose.Schema(
   {
@@ -15,7 +16,6 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: [true, "Email is required"],
-      unique: true,
       trim: true,
       lowercase: true,
       match: [
@@ -81,7 +81,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.index({ email: 1 }, { unique: true }); // ask chatgpt
+userSchema.index({ email: 1 }, { unique: true }); // ask chatgpt  // point 1
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
@@ -108,8 +108,38 @@ userSchema.methods.updateLastActive = function () {
   return this.save({ validateBeforeSave: false });
 };
 
+userSchema.methods.getAccessToken = function () {
+   return jwt.sign(
+     {
+       _id: this._id
+     },
+     process.env.ACCESS_TOKEN_SECRET,
+     {expiresIn: process.env.ACCESS_TOKEN_EXPIRE}
+   )
+}
+
+userSchema.methods.getRefreshToken = function () {
+   return jwt.sign(
+     {
+       _id: this._id
+     },
+     process.env.REFRESH_TOKEN_SECRET,
+     {expiresIn: process.env.REFRESH_TOKEN_EXPIRE}
+   )
+}
+
 userSchema.virtual("totalEnrolledCourses").get(function () {
   return this.enrolledCourses?.length || 0;
 });
 
 export const User = mongoose.model("User", userSchema)
+
+
+// point 1
+/* 
+For simple apps or smaller projects: unique: true inside the field is fine.
+
+For bigger apps or production-grade control: prefer using .index() explicitly 
+and remove unique: true from the field to avoid duplication.
+userSchema.index({ email: 1 }, { unique: true });
+*/
