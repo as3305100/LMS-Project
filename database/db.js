@@ -16,9 +16,11 @@ class DatabaseConnection {
     });
     mongoose.connection.on("error", (err) => {
       console.error("❌ MongoDB connection error:", err);
+      if(this.isConnected === false) return;
       this.isConnected = false;
     });
     mongoose.connection.on("disconnected", () => {
+      if (this.isConnected === false) return;
       console.log("⚠️ MongoDB disconnected");
       this.isConnected = false;
       this.handleDisconnection();
@@ -30,6 +32,7 @@ class DatabaseConnection {
 
   async connect() {
     try {
+      console.log("Connect is called");
       if (!process.env.MONGO_URI) {
         throw new Error("MongoDB URI is not defined in environment variables");
       }
@@ -39,7 +42,7 @@ class DatabaseConnection {
         // useUnifiedTopology: true,
         maxPoolSize: 10,
         serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 45000,
+        socketTimeoutMS: 4500,
         family: 4,
       };
 
@@ -51,7 +54,7 @@ class DatabaseConnection {
       this.retryCount = 0;
     } catch (error) {
       console.error("Failed to connect to MongoDB:", error.message);
-      await this.handleConnectionError();
+      return this.handleConnectionError();
     }
   }
 
@@ -61,6 +64,7 @@ class DatabaseConnection {
       console.log(
         `Retrying connection... Attempt ${this.retryCount} of ${MAX_RETRIES}`
       );
+      // await mongoose.connection.close();
       await new Promise((resolve) => setTimeout(resolve, RETRY_INTERVAL));
       return this.connect();
     } else {
@@ -72,12 +76,10 @@ class DatabaseConnection {
   }
 
   async handleDisconnection() {
-    if (this.isConnected || this.isReconnecting) return;
-
-    this.isReconnecting = true;
-    console.log("Attempting to reconnect to MongoDB...");
-    await this.connect();
-    this.isReconnecting = false;
+    if (!this.isConnected) {
+      console.log("Attempting to reconnect to MongoDB...");
+      await this.connect();
+    }
   }
 
   async handleAppTermination() {
