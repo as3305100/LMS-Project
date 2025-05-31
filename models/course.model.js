@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const courseSchema = new mongoose.Schema(
   {
@@ -8,6 +9,11 @@ const courseSchema = new mongoose.Schema(
       trim: true,
       maxLength: [100, "Course title cannot exceed 100 characters"],
     },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "Owner ref is required"]
+    },
     subtitle: {
       type: String,
       trim: true,
@@ -16,7 +22,7 @@ const courseSchema = new mongoose.Schema(
     description: {
       type: String,
       trim: true,
-      maxLength: [8000, "Course description not more than 8000 characters"],
+      maxLength: [5000, "Course description not more than 8000 characters"],
     },
     category: {
       type: String,
@@ -82,6 +88,8 @@ const courseSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+
+courseSchema.plugin(mongooseAggregatePaginate)
 
 courseSchema.index({title: "text"})
 

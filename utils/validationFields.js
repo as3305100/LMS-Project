@@ -31,5 +31,5 @@ export const validationFields = {
 
   bio: Joi.string().max(200).optional().messages({
     "string.max": "Bio cannot exceed 200 characters",
-  }),
+  }) 
 };
