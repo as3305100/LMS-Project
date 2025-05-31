@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
 import { ApiError, handleAsync } from "./error.middleware.js";
 
-export const verifyJwt = handleAsync(async (req, _, next) => {
-  const tokenFromHeader = req.headers.authorization?.startswith("Bearer ")
+export const isAuthenticated = handleAsync(async (req, _, next) => {
+  const tokenFromHeader = req.headers.authorization?.trim().startswith("Bearer ")
     ? req.headers.authorization.split(" ")[1]
     : undefined;
 

@@ -10,6 +10,7 @@ import hpp from "hpp";
 import connectDB, { getDBStatus } from "./database/db.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import healthRouter from "./routes/health.route.js"
+import userRouter from "./routes/user.route.js"
 
 
 // loading environment variable
@@ -60,6 +61,7 @@ app.use(
 
 // Api routes
 app.use("/health", healthRouter)
+app.use("/api/v1/users", userRouter)
 
 // 404 handler
 app.use((req, res) => {

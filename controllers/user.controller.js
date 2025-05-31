@@ -1,9 +1,11 @@
 import fs from "node:fs/promises";
+import crypto from "node:crypto";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError, handleAsync } from "../middlewares/error.middleware.js";
 import { uploadMedia, deleteMedia } from "../utils/cloudinary.js";
 import sendEmail from "../utils/sendEmail.js";
+import jwt from "jsonwebtoken";
 
 export const createUserAccount = handleAsync(async (req, res) => {
   const { name, email, password, role, bio = "" } = req.validated;
@@ -238,7 +240,7 @@ export const changeUserPassword = handleAsync(async (req, res) => {
   return new ApiResponse(200, "Password updated successfully").send(res);
 });
 
-export const forgotPassword = catchAsync(async (req, res) => {
+export const forgotPassword = handleAsync(async (req, res) => {
   const { email } = req.validated;
 
   const user = await User.findOne({ email });
@@ -279,9 +281,100 @@ export const forgotPassword = catchAsync(async (req, res) => {
   }
 });
 
-export const resetPassword = catchAsync(async (req, res) => {
-   const { token } = req.params;
+export const resetPassword = handleAsync(async (req, res) => {
+  const { token } = req.params;
+  const { email, password } = req.validated;
 
+  const user = await user.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const hashToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  if (
+    user.resetPasswordToken !== hashToken ||
+    user.resetPasswordExpire < Date.now()
+  ) {
+    throw new ApiError(400, "Invalid or expired reset token");
+  }
+
+  if (await user.comparePassword(password)) {
+    throw new ApiError(400, "New password must be different from old password");
+  }
+
+  user.password = password;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+
+  await user.save();
+
+  return new ApiResponse(200, "Password reset successful").send(res);
+});
+
+export const deleteUserAccount = handleAsync(async (req, res) => {
+  const userId = req.userId;
+
+  const user = await User.findByIdAndDelete(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (user.avatar !== "default-avatar.png") {
+    await deleteMedia(user.avatarId);
+  }
+
+  res.clearCookie("refreshToken", cookieOptions);
+
+  return new ApiResponse(200, "User account deleted successfully").send(res);
+});
+
+export const refreshAccessToken = handleAsync(async (req, res) => {
+
+  const tokenFromHeader = req.headers.authorization?.trim().startswith("Bearer ")
+    ? req.headers.authorization.split(" ")[1]
+    : undefined;
+
+  const refreshTokenClient = req.cookies?.refreshToken || tokenFromHeader;
+
+  if (!refreshTokenClient) {
+    throw new ApiError(
+      400,
+      "Refresh Token is not present. User needs to login again."
+    );
+  }
+
+  let decoded;
+
+  try {
+    decoded = jwt.verify(refreshTokenClient, process.env.REFRESH_TOKEN_SECRET);
+  } catch (error) {
+    throw new ApiError(400, "Invalid Refresh Token. Please login");
+  }
+
+  const user = await User.findById(decoded._id).select("+refreshToken")
+
+  if(!user){
+     throw new ApiError(404, "User not found")
+  }
+
+  if(user.refreshToken !== refreshTokenClient){
+     throw new ApiError(400, "Refresh token does not match")
+  }
+
+  const {accessToken, refreshToken} = await generateAccessRefreshToken(user._id)
+
+  user.refreshToken = refreshToken
+
+  await user.save({validateBeforeSave: false})
+
+  res.cookie("accessToken", accessToken, {...cookieOptions, maxAge: 4 * 60 * 60 * 1000})
+     .cookie("refreshToken", refreshToken, {...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000})
+
+  return new ApiResponse(200, "Access token renewed successfully", {accessToken, refreshToken, _id: user._id}).send(res)
+ 
 });
 
 // point 1
