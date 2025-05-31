@@ -3,6 +3,8 @@ import crypto from "node:crypto";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+import mongooseLeanVirtuals from "mongoose-lean-virtuals";
 
 const userSchema = new mongoose.Schema(
   {
@@ -86,11 +88,14 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+userSchema.plugin(mongooseAggregatePaginate)
+userSchema.plugin(mongooseLeanVirtuals)
+
 userSchema.index({ email: 1 }, { unique: true }); // ask chatgpt  // point 1
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 12);
+  this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
@@ -108,9 +113,9 @@ userSchema.methods.getResetPasswordToken = function () {
   return resetToken;
 };
 
-userSchema.methods.updateLastActive = function () {
+userSchema.methods.updateLastActive = async function () {
   this.lastActive = Date.now();
-  return this.save({ validateBeforeSave: false });
+  return await this.save({ validateBeforeSave: false });
 };
 
 userSchema.methods.getAccessToken = function () {
