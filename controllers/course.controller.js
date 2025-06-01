@@ -10,6 +10,7 @@ import {
 import { Lecture } from "../models/lecture.model.js";
 import { User } from "../models/user.model.js";
 import mongoose from "mongoose";
+import { unlink } from "node:fs";
 
 // utility function
 const safeUnlink = async (filePath) => {
@@ -43,6 +44,7 @@ export const createNewCourse = handleAsync(async (req, res) => {
   const user = await User.findById(userId).lean();
 
   if (!user) {
+    await safeUnlink(thumbnailPath);
     throw new ApiError(404, "User not found");
   }
 
@@ -52,6 +54,7 @@ export const createNewCourse = handleAsync(async (req, res) => {
   ).lean();
 
   if (instructorUsers.length !== instructors.length) {
+    await safeUnlink(thumbnailPath);
     throw new ApiError(400, "Some instructor emails are invalid or not found");
   }
 
@@ -235,6 +238,7 @@ export const updateCourseDetails = handleAsync(async (req, res) => {
   } = req.validated;
 
   if (!mongoose.Types.ObjectId.isValid(courseId)) {
+    if (thumbnailPath) await safeUnlink(thumbnailPath);
     throw new ApiError(400, "Invalid course ID");
   }
 
@@ -243,6 +247,7 @@ export const updateCourseDetails = handleAsync(async (req, res) => {
   );
 
   if (!course) {
+    if (thumbnailPath) await safeUnlink(thumbnailPath);
     throw new ApiError(404, "Course is not found, which is created by you.");
   }
 
@@ -252,6 +257,7 @@ export const updateCourseDetails = handleAsync(async (req, res) => {
   ).lean();
 
   if (instructorUsers.length !== instructors.length) {
+    if (thumbnailPath) await safeUnlink(thumbnailPath);
     throw new ApiError(400, "Some instructor emails are invalid or not found");
   }
 
@@ -269,7 +275,6 @@ export const updateCourseDetails = handleAsync(async (req, res) => {
 
   if (thumbnailPath) {
     const response = await uploadMedia(thumbnailPath);
-    await deleteMedia(course.thumbnailId);
     updateInfo.thumbnail = response.secure_url;
     updateInfo.thumbnailId = response.public_id;
   }
@@ -285,6 +290,8 @@ export const updateCourseDetails = handleAsync(async (req, res) => {
   if (!courseUpdate) {
     throw new ApiError(404, "Failed to update course. Course not found.");
   }
+
+  if (thumbnailPath) await deleteMedia(course.thumbnailId);
 
   const responseData = courseUpdate.toObject(); // point 2
   delete responseData.thumbnailId;
@@ -360,17 +367,19 @@ export const addLectureToCourse = handleAsync(async (req, res) => {
 
   const lectureResponse = await uploadMedia(videoPath);
 
-  const createLecture = await Lecture.create({
-    title,
-    description,
-    isPreview,
-    order,
-    videoUrl: lectureResponse.secure_url,
-    publicId: lectureResponse.public_id,
-    duration: lectureResponse.duration,
-  });
+  let createLecture;
 
-  if (!createLecture) {
+  try {
+    createLecture = await Lecture.create({
+      title,
+      description,
+      isPreview,
+      order,
+      videoUrl: lectureResponse.secure_url,
+      publicId: lectureResponse.public_id,
+      duration: lectureResponse.duration,
+    });
+  } catch (error) {
     await deleteVideoCloudinary(lectureResponse.public_id);
     throw new ApiError(500, "Lecture creation failed");
   }
