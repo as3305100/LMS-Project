@@ -33,7 +33,9 @@
     "mongoose-lean-virtuals": "^2.0.0",
     "morgan": "^1.10.0",
     "multer": "^2.0.0",
-    "nodemailer": "^7.0.3"
+    "nodemailer": "^7.0.3",
+    "razorpay": "^2.9.6",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "prettier": "^3.5.3"
