@@ -66,4 +66,4 @@ courseProgressSchema.methods.updateLastAccessed = function () {
     return this.save({validateBeforeSave: false})
 }
 
-export const courseProgress = mongoose.model("CourseProgress", courseProgress)
+export const CourseProgress = mongoose.model("CourseProgress", courseProgress)
