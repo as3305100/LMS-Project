@@ -49,6 +49,7 @@ const courseSchema = new mongoose.Schema(
     thumbnailId: {
       type: String,
       required: [true, "Thumbnail public_id is required"],
+      select: false
     },
     enrolledStudents: [
       {

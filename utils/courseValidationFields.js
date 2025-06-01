@@ -46,10 +46,11 @@ export const courseSchema = Joi.object({
     .items(
       Joi.string()
         .trim()
-        .pattern(/^[0-9a-fA-F]{24}$/)
+        .lowercase()
+        .pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
         .messages({
-          "string.pattern.base": "Each instructor ID must be a valid ObjectId",
-          "string.base": "Instructor ID must be a string",
+          "string.pattern.base": "Please provide a valid email for instructor",
+          "string.base": "Instructor must be a string",
         })
     )
     .min(1)
@@ -60,3 +61,25 @@ export const courseSchema = Joi.object({
       "any.required": "Course instructor is required",
     }),
 });
+
+export const lectureValidationSchema = Joi.object({
+  title: Joi.string().trim().max(100).required().messages({
+    "string.empty": "Lecture title is required",
+    "string.max": "Lecture title cannot exceed 100 characters",
+  }),
+
+  description: Joi.string().trim().max(500).optional().messages({
+    "string.max": "Lecture description cannot exceed 500 characters",
+  }),
+
+  isPreview: Joi.boolean().optional().default(false).messages({
+    "boolean.base": "isPreview must be a boolean value",
+  }),
+
+  order: Joi.number().integer().required().messages({
+    "number.base": "Order must be a number",
+    "number.integer": "Order must be an integer",
+    "any.required": "Lecture order is required",
+  }),
+});
+
