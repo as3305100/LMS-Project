@@ -54,7 +54,7 @@ const userSchema = new mongoose.Schema(
     },
     refreshToken: {
       type: String,
-      select : false
+      select: false,
     },
     enrolledCourses: [
       {
@@ -88,15 +88,21 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.plugin(mongooseAggregatePaginate)
-userSchema.plugin(mongooseLeanVirtuals)
+userSchema.plugin(mongooseAggregatePaginate);
+userSchema.plugin(mongooseLeanVirtuals);
 
 userSchema.index({ email: 1 }, { unique: true }); // ask chatgpt  // point 1
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
+
+  try {
+    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
+    this.password = await bcrypt.hash(this.password, saltRounds);
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 userSchema.methods.comparePassword = async function (password) {

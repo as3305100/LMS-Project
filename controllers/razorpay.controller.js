@@ -77,6 +77,10 @@ export const verifyPayment = async (req, res) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
       req.body;
 
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      throw new ApiError(400, "Payment verfication details are missing");
+    }
+
     const body = razorpay_order_id + "|" + razorpay_payment_id;
 
     const expectedSignature = crypto
@@ -84,26 +88,25 @@ export const verifyPayment = async (req, res) => {
       .update(body.toString())
       .digest("hex");
 
-    const isAuthentic = expectedSignature === razorpay_signature
+    const isAuthentic = expectedSignature === razorpay_signature;
 
-    if(!isAuthentic){
-       throw new ApiError(400, "Payment verification failed")
+    if (!isAuthentic) {
+      throw new ApiError(400, "Payment verification failed");
     }
 
     const purchase = await CoursePurchase.findOne({
-       paymentId: razorpay_order_id
-    })
+      paymentId: razorpay_order_id,
+    });
 
-    if(!purchase){
-       throw new ApiError(404, "Purchase record not found")
+    if (!purchase) {
+      throw new ApiError(404, "Purchase record not found");
     }
 
-    purchase.status = "completed"
+    purchase.status = "completed";
 
-    await purchase.save()
-
+    await purchase.save();
   } catch (error) {
-     console.error("Error verifying payment:", error);
-     throw new ApiError(500, "Error verifying payment:", error.message)
+    console.error("Error verifying payment:", error);
+    throw new ApiError(500, "Error verifying payment:", error.message);
   }
 };

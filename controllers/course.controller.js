@@ -47,6 +47,11 @@ export const createNewCourse = handleAsync(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
+  if(user.role !== "admin"){
+     await safeUnlink(thumbnailPath)
+     throw new ApiError(400, "User is not admin, so user cannot create the course")
+  }
+
   const instructorUsers = await User.find(
     { email: { $in: instructors } }, // point 1
     "_id"
@@ -207,6 +212,16 @@ export const getPublishedCourses = handleAsync(async (req, res) => {
 export const getMyCreatedCourses = handleAsync(async (req, res) => {
   const userId = req.userId;
 
+  const user = await User.findById(userId)
+
+  if(!user){
+     throw new ApiError(404, "User not found")
+  }
+
+  if(user.role !== "admin"){
+     throw new ApiError(400, "Only admin can see my created courses, so update your account")
+  }
+
   const courses = await Course.find({ owner: userId })
     .select("title category price owner level thumbnail createdAt")
     .populate({
@@ -263,6 +278,7 @@ export const updateCourseDetails = handleAsync(async (req, res) => {
   const instructorIds = instructorUsers.map((user) => user._id);
 
   const updateInfo = {
+    title,
     subtitle,
     description,
     category,

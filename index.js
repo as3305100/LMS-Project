@@ -21,12 +21,14 @@ import razorpayRouter from "./routes/razorpay.route.js"
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT) || 3000;
+
+const MAX = parseInt(process.env.RATE_LIMIT_MAX) || 100
 
 // global rate limit
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: MAX,
   message: "Too many requests from this IP, please try again later."
 })
 
