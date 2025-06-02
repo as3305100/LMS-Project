@@ -11,6 +11,10 @@ import connectDB, { getDBStatus } from "./database/db.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import healthRouter from "./routes/health.route.js"
 import userRouter from "./routes/user.route.js"
+import courseRouter from "./routes/course.route.js"
+import progressRouter from "./routes/courseProgress.route.js"
+import purchaseRouter from "./routes/courseProgress.route.js"
+import razorpayRouter from "./routes/razorpay.route.js"
 
 
 // loading environment variable
@@ -62,6 +66,10 @@ app.use(
 // Api routes
 app.use("/health", healthRouter)
 app.use("/api/v1/users", userRouter)
+app.use("/api/v1/courses", courseRouter)
+app.use("/api/v1/progress", progressRouter)
+app.use("/api/v1/purchase", purchaseRouter)
+app.use("/api/v1/razorpay", razorpayRouter)
 
 // 404 handler
 app.use((req, res) => {

@@ -32,7 +32,7 @@ export const updateLectureProgress = handleAsync(async (req, res) => {
   const lectureId = req.params?.lectureId;
   const userId = req.userId;
 
-  const { isCompleted, watchTime } = req.body;
+  const { isCompleted, watchTime } = req.validated;
 
   if (
     !mongoose.Types.ObjectId.isValid(courseId) ||

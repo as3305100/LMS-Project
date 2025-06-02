@@ -9,7 +9,7 @@ import mongoose from "mongoose";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const initiateStripeCheckout = handleAsync(async (req, res) => {
-  const { courseId } = req.body;
+  const { courseId="" } = req.body;
   const userId = req.userId;
 
   if (!mongoose.Types.ObjectId.isValid(courseId)) {
